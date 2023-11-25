@@ -7,6 +7,7 @@ import seaborn as sns
 import numpy as np
 import zipfile
 
+
 # muzete pridat libovolnou zakladni knihovnu ci knihovnu predstavenou na prednaskach
 # dalsi knihovny pak na dotaz
 
@@ -16,9 +17,11 @@ import zipfile
 def load_data(filename: str) -> pd.DataFrame:
     # tyto konstanty nemente, pomuzou vam pri nacitani
     headers = ["p1", "p36", "p37", "p2a", "weekday(p2a)", "p2b", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13a",
-               "p13b", "p13c", "p14", "p15", "p16", "p17", "p18", "p19", "p20", "p21", "p22", "p23", "p24", "p27", "p28",
+               "p13b", "p13c", "p14", "p15", "p16", "p17", "p18", "p19", "p20", "p21", "p22", "p23", "p24", "p27",
+               "p28",
                "p34", "p35", "p39", "p44", "p45a", "p47", "p48a", "p49", "p50a", "p50b", "p51", "p52", "p53", "p55a",
-               "p57", "p58", "a", "b", "d", "e", "f", "g", "h", "i", "j", "k", "l", "n", "o", "p", "q", "r", "s", "t", "p5a"]
+               "p57", "p58", "a", "b", "d", "e", "f", "g", "h", "i", "j", "k", "l", "n", "o", "p", "q", "r", "s", "t",
+               "p5a"]
 
     # def get_dataframe(filename: str, verbose: bool = False) -> pd.DataFrame:
     regions = {
@@ -37,9 +40,7 @@ def load_data(filename: str) -> pd.DataFrame:
         "LBK": "18",
         "KVK": "19",
     }
-    
-    float_cols = ["p37", "a", "b", "d", "e", "f", "g", "o", "n", "r", "s"]
-    
+
     # Prázdný DataFrame pro načtení dat
     all_data = pd.DataFrame()
 
@@ -62,8 +63,8 @@ def load_data(filename: str) -> pd.DataFrame:
 
                         # Ignorování prázdných souborů
                         if csv_file.startswith('08') or csv_file.startswith('09') or \
-                           csv_file.startswith('10') or csv_file.startswith('11') or \
-                           csv_file.startswith('12') or csv_file.startswith('13'):
+                                csv_file.startswith('10') or csv_file.startswith('11') or \
+                                csv_file.startswith('12') or csv_file.startswith('13'):
                             print(f"Soubor {csv_file} je prázdný a bude vynechán.")
                             continue
 
@@ -79,19 +80,76 @@ def load_data(filename: str) -> pd.DataFrame:
                         with iz.open(csv_file) as f:
                             data = pd.read_csv(f, encoding='cp1250', names=headers, sep=';', low_memory=False)
                             data['region'] = region
-                            
+
                             # Sloučení s hlavním DataFrame
                             all_data = pd.concat([all_data, data], ignore_index=True)
-                            
+
         # Resetování indexu a odstranění výchozího indexu
         all_data.reset_index(drop=True, inplace=True)
         return all_data
-
+    
 # Ukol 2: zpracovani dat
 
+def convert_to_float(df, float_cols):
+    for col in float_cols:
+        if df[col].dtype == 'object':
+            # Attempt to convert to float after replacing commas with dots
+            converted_col = df[col].str.replace(',', '.').apply(pd.to_numeric, errors='coerce')
+
+            # Find and print values that couldn't be converted
+            invalid_values = df[col][converted_col.isna() & df[col].notna()]
+            if not invalid_values.empty:
+                print(f"Invalid values in column '{col}':")
+                print(invalid_values)
+
+            df[col] = converted_col
+    return df
+
+def convert_columns_to_float(df, float_cols):
+    for col in float_cols:
+        # Attempt to convert to float, replacing non-convertible values with NaN
+        converted_col = pd.to_numeric(df[col], errors='coerce')
+
+        # Find and print values that couldn't be converted
+        invalid_values = df[col][converted_col.isna() & df[col].notna()]
+        if not invalid_values.empty:
+            print(f"Invalid values in column '{col}':")
+            print(invalid_values)
+
+        df[col] = converted_col
+    return df
 
 def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
-    pass
+    # Convert 'p2a' to date format
+    df['date'] = pd.to_datetime(df['p2a'])
+
+    # Convert columns to categorical data type
+    cat_cols = df.select_dtypes(include='object').columns.tolist()
+    cat_cols.remove('region')  # Keep 'region' as a regular object
+    for col in cat_cols:
+        df[col] = df[col].astype('category')
+
+    # Convert specified columns to float
+    float_cols = ["p37", "a", "b", "d", "e", "f", "g", "o", "n", "r", "s"]
+    
+    df = convert_to_float(df, float_cols)
+
+    df = convert_columns_to_float(df, float_cols)
+
+    # Remove duplicates based on 'p1'
+    df = df.drop_duplicates(subset=['p1']) # Keep the first occurrence
+
+    # Print the size information
+    if verbose:
+        orig_size = sum(df.memory_usage(deep=True)) / 10 ** 6  # size in MB
+        print(f'orig_size={orig_size:.1f} MB')
+        # To calculate the new size, first create a copy and then recompute the size
+        df = df.copy()
+        new_size = sum(df.memory_usage(deep=True)) / 10 ** 6
+        print(f'new_size={new_size:.1f} MB')
+
+    return df
+
 
 # Ukol 3: počty nehod oidke stavu řidiče
 
@@ -100,12 +158,14 @@ def plot_state(df: pd.DataFrame, fig_location: str = None,
                show_figure: bool = False):
     pass
 
+
 # Ukol4: alkohol v jednotlivých hodinách
 
 
 def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
                  show_figure: bool = False):
     pass
+
 
 # Ukol 5: Zavinění nehody v čase
 
@@ -120,14 +180,14 @@ if __name__ == "__main__":
     # skript nebude pri testovani pousten primo, ale budou volany konkreni
     # funkce.
     df = load_data("data.zip")
-    # Uložení dat do souboru Excel nebo CSV
-    df.to_csv('cesta_k_souboru.csv', index=False, sep=';', encoding='utf-8')
+    #df.to_pickle("dataframe.pkl")
+    # df.to_csv('data.csv', index=False, sep=';', encoding='utf-8')
+    #df = pd.read_pickle("dataframe.pkl")
     df2 = parse_data(df, True)
 
     plot_state(df2, "01_state.png")
     plot_alcohol(df2, "02_alcohol.png", True)
     plot_fault(df2, "03_fault.png")
-
 
 # Poznamka:
 # pro to, abyste se vyhnuli castemu nacitani muzete vyuzit napr
