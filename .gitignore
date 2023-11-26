@@ -1,7 +1,6 @@
 dataframe.parquet
 dataframe.pkl
-cesta_k_souboru.csv
-cesta_k_souboru.xlsx
+data.csv
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
