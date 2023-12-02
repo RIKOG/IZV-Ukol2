@@ -99,7 +99,7 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
         'p15', 'p16', 'p17', 'p18', 'p19', 'p20', 'p21', 'p22', 'p23', 'p24', 'p27', 
         'p28', 'p29', 'p30', 'p31', 'p32', 'p33c', 'p33f', 'p33g', 'p35', 
         'p36', 'p37', 'p39', 'p44', 'p45a', 'p47', 'p48a', 'p49', 'p50a', 'p50b', 'p51', 'p52', 
-        'p55a', 'p57', 'p58'
+        'p55a', 'p57', 'p58', 'weekday(p2a)', 'h', 'i', 'k', 'region'
     ]
 
     float_cols = ['a', 'b', 'd', 'e', 'f', 'g', 'o']
@@ -118,16 +118,10 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
         df[col] = df[col].astype(str).str.replace(',', '.')
         # Convert to float, setting errors to 'coerce' to handle any non-convertible values
         df[col] = pd.to_numeric(df[col], errors='coerce')
-        # Optional: Print invalid values that could not be converted
-        invalid_values = df[df[col].isna()][col]
-    if not invalid_values.empty:
-        print(f"Invalid values in column '{col}':")
-        print(invalid_values)
     
     # Remove duplicates based on 'p1'
     df = df.drop_duplicates(subset=['p1']) # Keep the first occurrence
     
-
     # Print the size information
     if verbose:
         print(f'orig_size={orig_size:.1f} MB')
@@ -138,12 +132,63 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     return df
 
 
+
 # Ukol 3: počty nehod oidke stavu řidiče
+def plot_state(df, fig_location=None, show_figure=False):
+    
+    df['p57'] = df['p57'].replace({
+        1: 'Stav řidiče: dobrý',
+        2: 'Stav řidiče: unaven, usnul, náhlá fyzická indispozice',
+        3: 'Stav řidiče: pod vlivem léků, narkotik',
+        4: 'Stav řidiče: pod vlivem alkoholu, do 0,99 ‰',
+        5: 'Stav řidiče: pod vlivem alkoholu, 1‰ a více',
+        6: 'Stav řidiče: nemoc, úraz apod.',
+        7: 'Stav řidiče: invalida',
+        8: 'Stav řidiče: řidič při jízdě zemřel',
+        9: 'Stav řidiče: pokus o sebevraždu, sebevražda'
+    })
 
+    # Agregace dat pro graf
+    data_for_plotting = df.groupby(['region', 'p57']).size().reset_index(name='pocet_nehod')
+    
+    # Vytvoření figure-level grafu s seaborn
+    g = sns.catplot(
+        data=data_for_plotting, kind='bar',
+        x='region', y='pocet_nehod', hue='p57',
+        col='p57', col_wrap=2, height=3, aspect=1.5,
+        sharey=False, palette='tab10'
+    )
+    
+    # Nastavení grafů a popisků, aby se nepřekrývaly
+    g.set_titles("{col_name}")
+    g.set_axis_labels("", "Počet nehod")
+    # Removing the rotation of x-tick labels
+    g.set_xticklabels(rotation=0)
 
-def plot_state(df: pd.DataFrame, fig_location: str = None,
-               show_figure: bool = False):
-    pass
+    # Nastavení pozadí pro každý podgraf
+    for ax in g.axes.flatten():
+        ax.set_facecolor('lightgrey')
+
+    # Upravení výšky y osy dle maximální hodnoty v každém podgrafu
+    for ax in g.axes:
+        ax.set_ylim(0, data_for_plotting[data_for_plotting['p57'] == ax.get_title()]['pocet_nehod'].max())
+
+    # Nastavení popisků pro x osu (regiony)
+    for ax in g.axes:
+        ax.set_xticklabels(data_for_plotting['region'].unique(), rotation=0)
+
+    # Updating the column titles to reflect the driver's condition instead of numbers
+    for ax, title in zip(g.axes.flatten(), data_for_plotting['p57'].unique()):
+        ax.set_title(title)
+
+    # Uložení grafu do souboru, pokud je zadán fig_location
+    if fig_location:
+        g.fig.savefig(fig_location)
+    
+    # Zobrazení grafu, pokud je show_figure True
+    if show_figure:
+        plt.show()
+
 
 
 # Ukol4: alkohol v jednotlivých hodinách
@@ -167,13 +212,44 @@ if __name__ == "__main__":
     # funkce.
     df = load_data("data.zip")
 
+    # Kontrola, zda sloupec 'o' existuje a zda obsahuje nějaké hodnoty
+    #if 'o' in df.columns:
+    #    # Filtrace hodnot ve sloupci 'o', které nejsou NaN
+    #    non_null_o_values_1 = df['o'][df['o'].notna()]
+    #
+    #    # Výpis těchto hodnot
+    #    print(non_null_o_values_1.head(10))
+    #    
+    #    # Nahrazení čárek tečkami pro konverzi na float
+    #    df['o'] = df['o'].astype(str).str.replace(',', '.')
+    #    # Převod na float, nastavení chyb na 'coerce' pro zpracování nekonvertovatelných hodnot
+    #    df['o'] = pd.to_numeric(df['o'], errors='coerce')
+    #
+    #    non_null_o_values_2 = df['o'][df['o'].notna()]
+    #    
+    #    # Výpis těchto hodnot
+    #    print(non_null_o_values_2.head(10))
+
+    # Výběr první neprázdné hodnoty v každém sloupci
+    #first_values = df.apply(lambda col: col.dropna().iloc[0] if not col.dropna().empty else 'NaN')
+
+    # Výpis hodnot tabulatorově
+    #for column, value in first_values.items():
+    #    print(f"{column}\t{value}")
+
     #df.to_pickle("dataframe.pkl")
     #df.to_csv('data.csv', index=False, sep=';', encoding='utf-8')
     #df = pd.read_pickle("dataframe.pkl")
 
     df2 = parse_data(df, True)
 
-    #plot_state(df2, "01_state.png")
+    #if 'o' in df2.columns:
+    #    non_null_o_values_3 = df2['o'][df2['o'].notna()]
+    #
+    #    # Výpis těchto hodnot
+    #    print(non_null_o_values_3.head(10))
+
+    plot_state(df2, "01_state.png")
     #plot_alcohol(df2, "02_alcohol.png", True)
     #plot_fault(df2, "03_fault.png")
 
