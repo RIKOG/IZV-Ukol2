@@ -148,33 +148,27 @@ def plot_state(df, fig_location=None, show_figure=False):
         '8': 'Stav řidiče: řidič při jízdě zemřel',
         '9': 'Stav řidiče: pokus o sebevraždu, sebevražda'
     }
+
+    df = df.copy()
     
     # Exclude rows where 'p57' is NaN or '0' before mapping
-    df = df[df['p57'].notna() & (df['p57'] != '0')]
-
-    # Print out the unique values of 'p57' before mapping to ensure they are as expected.
-    print("Unique values in 'p57' before mapping:", df['p57'].unique())
+    df = df[df['p57'].notna() & (df['p57'] != '0') & (df['p57'] != '1') & (df['p57'] != '2') & (df['p57'] != '3')]
 
     # Aplikování mapování na sloupec 'p57'
     df['p57_text'] = df['p57'].map(driver_condition_mapping)
 
-    # Check for successful mapping by examining the unique values after mapping.
-    unique_p57_text = df['p57_text'].unique()
-    print("Unique values in 'p57_text' after mapping:", unique_p57_text)
-
-    # If no unique values are found after mapping, raise an error.
-    if len(unique_p57_text) == 0:
-        raise ValueError("No unique values in 'p57_text' column after mapping. Check the 'p57' column and the mapping.")
-
     # Agregace dat pro graf
     data_for_plotting = df.groupby(['region', 'p57_text'], observed=True).size().reset_index(name='pocet_nehod')
-    
+
+    # Determine the number of unique regions for the palette
+    num_regions = df['region'].nunique()
+
     # Vytvoření figure-level grafu s seaborn
     g = sns.catplot(
         data=data_for_plotting, kind='bar',
-        x='region', y='pocet_nehod', hue='p57_text',
-        col='p57_text', col_wrap=2, height=3, aspect=1.5,
-        sharey=False, palette='tab10'
+        x='region', y='pocet_nehod', hue='region',
+        col='p57_text', col_wrap=2, height=4, aspect=1.5,
+        sharey=False, palette=sns.color_palette("hls", 14),
     )
     
     # Nastavení grafů a popisků, aby se nepřekrývaly
@@ -185,8 +179,8 @@ def plot_state(df, fig_location=None, show_figure=False):
 
     # Nastavení pozadí pro každý podgraf
     for ax in g.axes.flatten():
-        ax.set_facecolor('lightgrey')
-
+        ax.yaxis.grid(True)
+        ax.xaxis.grid(False)
     # Upravení výšky y osy dle maximální hodnoty v každém podgrafu
     for ax in g.axes:
         ax.set_ylim(0, data_for_plotting[data_for_plotting['p57_text'] == ax.get_title()]['pocet_nehod'].max())
