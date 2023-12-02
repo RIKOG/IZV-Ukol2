@@ -131,8 +131,6 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
 
     return df
 
-
-
 # Ukol 3: počty nehod oidke stavu řidiče
 def plot_state(df, fig_location=None, show_figure=False):
     
@@ -169,6 +167,7 @@ def plot_state(df, fig_location=None, show_figure=False):
         x='region', y='pocet_nehod', hue='region',
         col='p57_text', col_wrap=2, height=4, aspect=1.5,
         sharey=False, palette=sns.color_palette("hls", 14),
+        
     )
     
     # Nastavení grafů a popisků, aby se nepřekrývaly
@@ -181,12 +180,9 @@ def plot_state(df, fig_location=None, show_figure=False):
     for ax in g.axes.flatten():
         ax.yaxis.grid(True)
         ax.xaxis.grid(False)
-    # Upravení výšky y osy dle maximální hodnoty v každém podgrafu
-    for ax in g.axes:
+        # Upravení výšky y osy dle maximální hodnoty v každém podgrafu
         ax.set_ylim(0, data_for_plotting[data_for_plotting['p57_text'] == ax.get_title()]['pocet_nehod'].max())
-
-    # Nastavení popisků pro x osu (regiony)
-    for ax in g.axes:
+        # Nastavení popisků pro x osu (regiony)
         ax.set_xticklabels(data_for_plotting['region'].unique(), rotation=0)
 
     # Uložení grafu do souboru, pokud je zadán fig_location
@@ -196,8 +192,6 @@ def plot_state(df, fig_location=None, show_figure=False):
     # Zobrazení grafu, pokud je show_figure True
     if show_figure:
         plt.show()
-
-
 
 # Ukol4: alkohol v jednotlivých hodinách
 
