@@ -167,7 +167,7 @@ def plot_state(df, fig_location=None, show_figure=False):
         x='region', y='pocet_nehod', hue='region',
         col='p57_text', col_wrap=2, height=4, aspect=1.5,
         sharey=False, palette=sns.color_palette("hls", 14),
-        
+        legend=False,
     )
     
     # Nastavení grafů a popisků, aby se nepřekrývaly
@@ -175,6 +175,10 @@ def plot_state(df, fig_location=None, show_figure=False):
     g.set_axis_labels("", "Počet nehod")
     # Removing the rotation of x-tick labels
     g.set_xticklabels(rotation=0)
+    # Set the common title
+    g.fig.suptitle("Počet nehod dle stavu řidiče při nedobrém stavu", fontsize=16)
+    # Adjust the layout and make space for the common title
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     # Nastavení pozadí pro každý podgraf
     for ax in g.axes.flatten():
@@ -184,6 +188,14 @@ def plot_state(df, fig_location=None, show_figure=False):
         ax.set_ylim(0, data_for_plotting[data_for_plotting['p57_text'] == ax.get_title()]['pocet_nehod'].max())
         # Nastavení popisků pro x osu (regiony)
         ax.set_xticklabels(data_for_plotting['region'].unique(), rotation=0)
+
+    # Iterate over the axes to set the x-axis label for the bottom-most plots
+    for ax in g.axes[-2:]:  # Assumes that the last two axes are the bottom-most
+        ax.set_xlabel('Kraj')
+    # Hide x-axis labels for all other plots
+    for ax in g.axes[:-2]:
+        ax.set_xlabel('')
+
 
     # Uložení grafu do souboru, pokud je zadán fig_location
     if fig_location:
