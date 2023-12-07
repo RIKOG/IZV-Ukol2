@@ -227,14 +227,10 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
 
 
     # Determine if alcohol was involved
-    df['Alcohol'] = df['p11'].apply(lambda x: 'Ano' if x >= 3 else 'Ne')
-
-    # Select four regions - replace these with your chosen regions
-    selected_regions = ['JHM', 'MSK', 'OLK', 'ZLK']
-    df_selected = df[df['region'].isin(selected_regions)]
+    df['Alcohol'] = df['p11'].apply(lambda x: 'Ano' if x in [1, 3, 5, 6, 7, 8, 9] else 'Ne')
 
     # Aggregate data
-    grouped = df_selected.groupby(['region', 'Hour', 'Alcohol'], observed=True).size().reset_index(name='Počet nehod')
+    grouped = df.groupby(['region', 'Hour', 'Alcohol'], observed=True).size().reset_index(name='Počet nehod')
 
     # Create the plot
     g = sns.catplot(
@@ -278,8 +274,6 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
     # Show the plot if requested
     if show_figure:
         plt.show()
-
-
 
 # Ukol 5: Zavinění nehody v čase
 
