@@ -95,14 +95,16 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
 
 
     categorical_columns = [
-        'p5a', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11', 'p12', 'p13a', 'p13b', 'p13c', 
+        'p5a', 'p6', 'p7', 'p8', 'p9', 'p10', 'p12', 'p13a', 'p13b', 'p13c', 'p14',
         'p15', 'p16', 'p17', 'p18', 'p19', 'p20', 'p21', 'p22', 'p23', 'p24', 'p27', 
-        'p28', 'p29', 'p30', 'p31', 'p32', 'p33c', 'p33f', 'p33g', 'p35', 
+        'p28', 'p33c', 'p33f', 'p33g', 'p34', 'p35', 
         'p36', 'p37', 'p39', 'p44', 'p45a', 'p47', 'p48a', 'p49', 'p50a', 'p50b', 'p51', 'p52', 
-        'p55a', 'p57', 'p58', 'weekday(p2a)', 'h', 'i', 'k', 'region'
+        'p53', 'p55a', 'p57', 'p58', 'weekday(p2a)', 'h', 'i', 'k', 'region'
     ]
 
     float_cols = ['a', 'b', 'd', 'e', 'f', 'g', 'o']
+
+    int_cols = ['p2b', 'p11']
 
     # Convert 'p2a' to date format
     df['date'] = pd.to_datetime(df['p2a'])
@@ -118,7 +120,13 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
         df[col] = df[col].astype(str).str.replace(',', '.')
         # Convert to float, setting errors to 'coerce' to handle any non-convertible values
         df[col] = pd.to_numeric(df[col], errors='coerce')
-    
+
+    # Convert specified columns to integer
+    for col in int_cols:
+        if col in df.columns:
+            # Convert to integers, setting errors to 'coerce' to handle any non-convertible values
+            df[col] = pd.to_numeric(df[col], errors='coerce').astype(pd.Int32Dtype())
+
     # Remove duplicates based on 'p1'
     df = df.drop_duplicates(subset=['p1']) # Keep the first occurrence
     
@@ -210,7 +218,67 @@ def plot_state(df, fig_location=None, show_figure=False):
 
 def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
                  show_figure: bool = False):
-    pass
+    
+    df = df.copy()
+    
+    # Assuming 'p2b' is in HHMM integer format
+    df['Hour'] = (df['p2b'] // 100).astype(pd.Int32Dtype())
+    df = df[df['Hour'].between(0, 23)]  # Only keep valid hours
+
+
+    # Determine if alcohol was involved
+    df['Alcohol'] = df['p11'].apply(lambda x: 'Ano' if x >= 3 else 'Ne')
+
+    # Select four regions - replace these with your chosen regions
+    selected_regions = ['JHM', 'MSK', 'OLK', 'ZLK']
+    df_selected = df[df['region'].isin(selected_regions)]
+
+    # Aggregate data
+    grouped = df_selected.groupby(['region', 'Hour', 'Alcohol'], observed=True).size().reset_index(name='Počet nehod')
+
+    # Create the plot
+    g = sns.catplot(
+        data=grouped,
+        x='Hour',
+        y='Počet nehod',
+        hue='Alcohol',
+        col='region',
+        kind='bar',
+        height=5,
+        aspect=1,
+        sharex=False,
+        sharey=False,
+        col_wrap=2,
+        legend=True
+    )
+
+    # Update the titles and labels
+    g.set_titles("Kraj: {col_name}")
+    g.set_axis_labels("Hodina", "Počet nehod")
+    
+    # Adjust the layout
+    g.fig.subplots_adjust(top=0.9, right=0.85) 
+    g.fig.suptitle('Alkohol v jednotlivých hodinách', fontsize=16)
+
+    # Set the x-axis labels only for the bottom row of the grid
+    for ax in g.axes[-2:]:
+        ax.set_xlabel('Hodina')
+
+    # Remove the x-axis labels for all other plots
+    for ax in g.axes[:-2]:
+        ax.set_xlabel('')
+
+    # Set a common x-axis label for all plots
+    #g.fig.text(0.5, 0.01, 'Kraj', ha='center')
+
+    # Save the plot if a file location is provided
+    if fig_location:
+        g.savefig(fig_location)
+
+    # Show the plot if requested
+    if show_figure:
+        plt.show()
+
 
 
 # Ukol 5: Zavinění nehody v čase
@@ -252,7 +320,7 @@ if __name__ == "__main__":
     #    print(f"{column}\t{value}")
 
     #df.to_pickle("dataframe.pkl")
-    #df.to_csv('data.csv', index=False, sep=';', encoding='utf-8')
+    #đdf.to_csv('data.csv', index=False, sep=';', encoding='utf-8')
     #df = pd.read_pickle("dataframe.pkl")
 
     df2 = parse_data(df, True)
@@ -263,8 +331,8 @@ if __name__ == "__main__":
     #    # Výpis těchto hodnot
     #    print(non_null_o_values_3.head(10))
 
-    plot_state(df2, "01_state.png")
-    #plot_alcohol(df2, "02_alcohol.png", True)
+    #plot_state(df2, "01_state.png")
+    plot_alcohol(df2, "02_alcohol.png")
     #plot_fault(df2, "03_fault.png")
 
 # Poznamka:
