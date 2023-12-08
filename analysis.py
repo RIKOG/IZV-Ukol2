@@ -227,17 +227,17 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
 
 
     # Determine if alcohol was involved
-    df['Alcohol'] = df['p11'].apply(lambda x: 'Ano' if x in [1, 3, 5, 6, 7, 8, 9] else 'Ne')
+    df['Alkohol'] = df['p11'].apply(lambda x: 'Ano' if x in [1, 3, 5, 6, 7, 8, 9] else 'Ne')
 
     # Aggregate data
-    grouped = df.groupby(['region', 'Hour', 'Alcohol'], observed=True).size().reset_index(name='Počet nehod')
+    grouped = df.groupby(['region', 'Hour', 'Alkohol'], observed=True).size().reset_index(name='Počet nehod')
 
     # Create the plot
     g = sns.catplot(
         data=grouped,
         x='Hour',
         y='Počet nehod',
-        hue='Alcohol',
+        hue='Alkohol',
         col='region',
         kind='bar',
         height=5,
@@ -255,14 +255,6 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
     # Adjust the layout
     g.fig.subplots_adjust(top=0.95) 
     g.fig.suptitle('Alkohol v jednotlivých hodinách', fontsize=16)
-
-    # Set the x-axis labels only for the bottom row of the grid
-    for ax in g.axes[-2:]:
-        ax.set_xlabel('Hodina')
-
-    # Remove the x-axis labels for all other plots
-    for ax in g.axes[:-2]:
-        ax.set_xlabel('')
 
     # Save the plot if a file location is provided
     if fig_location:
@@ -323,8 +315,8 @@ if __name__ == "__main__":
     #    print(non_null_o_values_3.head(10))
 
     #plot_state(df2, "01_state.png")
-    plot_alcohol(df2, "02_alcohol.png")
-    #plot_fault(df2, "03_fault.png")
+    #plot_alcohol(df2, "02_alcohol.png")
+    plot_fault(df2, "03_fault.png")
 
 # Poznamka:
 # pro to, abyste se vyhnuli castemu nacitani muzete vyuzit napr
