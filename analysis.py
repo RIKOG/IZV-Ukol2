@@ -241,7 +241,7 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
         col='region',
         kind='bar',
         height=5,
-        aspect=1,
+        aspect=1.5,
         sharex=False,
         sharey=False,
         col_wrap=2,
@@ -253,7 +253,7 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
     g.set_axis_labels("Hodina", "Počet nehod")
     
     # Adjust the layout
-    g.fig.subplots_adjust(top=0.9, right=0.85) 
+    g.fig.subplots_adjust(top=0.95) 
     g.fig.suptitle('Alkohol v jednotlivých hodinách', fontsize=16)
 
     # Set the x-axis labels only for the bottom row of the grid
@@ -263,9 +263,6 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
     # Remove the x-axis labels for all other plots
     for ax in g.axes[:-2]:
         ax.set_xlabel('')
-
-    # Set a common x-axis label for all plots
-    #g.fig.text(0.5, 0.01, 'Kraj', ha='center')
 
     # Save the plot if a file location is provided
     if fig_location:
