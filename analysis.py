@@ -265,8 +265,6 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
         plt.show()
 
 # Ukol 5: Zavinění nehody v čase
-
-
 def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
     
     df = df.copy()
@@ -291,13 +289,12 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     print("Velikost dat po filtraci příčin:", df_selected.shape)
 
     # Transform the table to have the count of accidents for each day and cause
-    pivot = df_selected.pivot_table(index='date', columns='Cause', values='p1', aggfunc='count', fill_value=0)
+    pivot = df_selected.pivot_table(index='p2a', columns='Cause', values='p1', aggfunc='count', fill_value=0)
     print("Data po pivot transformaci:", pivot.head())
 
     # Resample to monthly level and stack the data
     monthly_data = pivot.resample('M').sum().stack().reset_index(name='Počet nehod')
-    monthly_data['date'] = monthly_data['date'].dt.to_period('M')
-    print("Data po měsíčním resamplingu:", monthly_data.head())
+    monthly_data['date'] = monthly_data['p2a'].dt.strftime('%Y-%m')  # Změna formátu data pro vizualizaci
 
     # Plot the line chart
     g = sns.relplot(
@@ -309,7 +306,7 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     )
 
     # Nastavení os a titulků
-    g.set(xlim=(pd.Timestamp('2016-01-01'), pd.Timestamp('2023-01-01')))
+    g.set(xlim=('2016-01', '2023-01'))  # Upravený formát data
     g.set_titles("{col_name}")
     g.set_axis_labels("Datum", "Počet nehod")
     g.fig.suptitle('Zavinění nehody v čase', fontsize=16)
@@ -318,7 +315,7 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     for ax in g.axes.flatten():
         ax.yaxis.grid(True)
         ax.xaxis.grid(False)
-        ax.set_facecolor('lightgray') # Nastavení barvy pozadí
+        ax.set_facecolor('lightgray')  # Nastavení barvy pozadí
 
     # Uložení grafu do souboru
     if fig_location:
@@ -329,47 +326,15 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
         plt.show()
 
 if __name__ == "__main__":
-    # zde je ukazka pouziti, tuto cast muzete modifikovat podle libosti
-    # skript nebude pri testovani pousten primo, ale budou volany konkreni
-    # funkce.
+
     df = load_data("data.zip")
 
-    # Kontrola, zda sloupec 'o' existuje a zda obsahuje nějaké hodnoty
-    #if 'o' in df.columns:
-    #    # Filtrace hodnot ve sloupci 'o', které nejsou NaN
-    #    non_null_o_values_1 = df['o'][df['o'].notna()]
-    #
-    #    # Výpis těchto hodnot
-    #    print(non_null_o_values_1.head(10))
-    #    
-    #    # Nahrazení čárek tečkami pro konverzi na float
-    #    df['o'] = df['o'].astype(str).str.replace(',', '.')
-    #    # Převod na float, nastavení chyb na 'coerce' pro zpracování nekonvertovatelných hodnot
-    #    df['o'] = pd.to_numeric(df['o'], errors='coerce')
-    #
-    #    non_null_o_values_2 = df['o'][df['o'].notna()]
-    #    
-    #    # Výpis těchto hodnot
-    #    print(non_null_o_values_2.head(10))
-
-    # Výběr první neprázdné hodnoty v každém sloupci
-    #first_values = df.apply(lambda col: col.dropna().iloc[0] if not col.dropna().empty else 'NaN')
-
-    # Výpis hodnot tabulatorově
-    #for column, value in first_values.items():
-    #    print(f"{column}\t{value}")
-
     #df.to_pickle("dataframe.pkl")
-    #đdf.to_csv('data.csv', index=False, sep=';', encoding='utf-8')
     #df = pd.read_pickle("dataframe.pkl")
 
     df2 = parse_data(df, True)
 
-    #if 'o' in df2.columns:
-    #    non_null_o_values_3 = df2['o'][df2['o'].notna()]
-    #
-    #    # Výpis těchto hodnot
-    #    print(non_null_o_values_3.head(10))
+    df.to_csv('data.csv', index=False, sep=';', encoding='utf-8')
 
     #plot_state(df2, "01_state.png")
     #plot_alcohol(df2, "02_alcohol.png")
