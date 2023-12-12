@@ -266,62 +266,51 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
 
 # Ukol 5: Zavinění nehody v čase
 def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
-    
     df = df.copy()
     
-    # Kontrolní tiskový výstup
-    print("Původní velikost dat:", df.shape)
-
     # Select four regions
     selected_regions = ['PHA', 'STC', 'JHC', 'PLK']
-    df_selected = df[df['region'].isin(selected_regions)]
-    print("Velikost dat po výběru regionů:", df_selected.shape)
-
-    # Filter the accidents based on cause (p10) and consider only values 1, 2, 3, and 4
     causes = {
         1: 'řidičem motorového vozidla',
         2: 'řidičem nemotorového vozidla',
         3: 'chodcem',
         4: 'lesní zvěří, domácím zvířectvem'
     }
-    df_selected = df_selected[df_selected['p10'].isin(causes.keys())]
-    df_selected['Cause'] = df_selected['p10'].map(causes)
-    print("Velikost dat po filtraci příčin:", df_selected.shape)
+    
+    # Set up the matplotlib figure and axes
+    fig, axs = plt.subplots(len(selected_regions), 1, figsize=(10, 15), sharex=True)
+    
+    # Loop through each region and plot
+    for i, region in enumerate(selected_regions):
+        df_region = df[(df['region'] == region) & (df['p10'].isin(causes.keys()))]
+        df_region['Cause'] = df_region['p10'].map(causes)
+        
+        pivot = df_region.pivot_table(index='p2a', columns='Cause', values='p1', aggfunc='count', fill_value=0)
+        monthly_data = pivot.resample('M').sum().stack().reset_index(name='Počet nehod')
+        monthly_data['date'] = monthly_data['p2a'].dt.strftime('%Y-%m')
 
-    # Transform the table to have the count of accidents for each day and cause
-    pivot = df_selected.pivot_table(index='p2a', columns='Cause', values='p1', aggfunc='count', fill_value=0)
-    print("Data po pivot transformaci:", pivot.head())
+        # Plotting the data
+        sns.lineplot(data=monthly_data, x='date', y='Počet nehod', hue='Cause', ax=axs[i])
 
-    # Resample to monthly level and stack the data
-    monthly_data = pivot.resample('M').sum().stack().reset_index(name='Počet nehod')
-    monthly_data['date'] = monthly_data['p2a'].dt.strftime('%Y-%m')  # Změna formátu data pro vizualizaci
+        # Customizing the ticks and labels
+        axs[i].set_xticks([f'{year}-01' for year in range(2016, 2024)])
+        axs[i].set_xticklabels([f'{year}' for year in range(2016, 2024)], rotation=45)
+        axs[i].set_title(f'Nehody v regionu {region}')
+        axs[i].grid(True)
 
-    # Plot the line chart
-    g = sns.relplot(
-        data=monthly_data,
-        x='date', y='Počet nehod',
-        hue='Cause', kind='line',
-        aspect=2, height=5,
-        facet_kws={'sharey': False, 'sharex': True}
-    )
+    # Set the common labels and title
+    fig.suptitle('Zavinění nehody v čase podle regionu', fontsize=16)
+    plt.xlabel('Datum')
+    plt.ylabel('Počet nehod')
 
-    # Nastavení os a titulků
-    g.set(xlim=('2016-01', '2023-01'))  # Upravený formát data
-    g.set_titles("{col_name}")
-    g.set_axis_labels("Datum", "Počet nehod")
-    g.fig.suptitle('Zavinění nehody v čase', fontsize=16)
+    # Adjust the layout
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    # Nastavení pozadí a mřížky
-    for ax in g.axes.flatten():
-        ax.yaxis.grid(True)
-        ax.xaxis.grid(False)
-        ax.set_facecolor('lightgray')  # Nastavení barvy pozadí
-
-    # Uložení grafu do souboru
+    # Save the plot to a file
     if fig_location:
-        g.savefig(fig_location)
+        plt.savefig(fig_location)
 
-    # Zobrazení grafu
+    # Show the plot
     if show_figure:
         plt.show()
 
