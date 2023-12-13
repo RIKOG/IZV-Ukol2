@@ -97,6 +97,23 @@ def load_data(filename: str) -> pd.DataFrame:
 # Ukol 2: zpracovani dat
 
 def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
+    """
+    Parse and clean the data from the DataFrame obtained by calling load_data().
+
+    This function converts the 'p2a' column to a datetime format, categorizes suitable columns,
+    converts specified columns to float or integer types, 
+    and duplicate records based on the 'p1' identifier are removed.
+
+    Parameters:
+    - df: DataFrame obtained from load_data() function.
+    - verbose: If True, prints the size of the DataFrame before and after parsing.
+
+    Returns:
+    - A cleaned and parsed DataFrame.
+
+    The function targets to reduce the memory usage below 0.7 GB.
+    
+    """
     if verbose:
         orig_size = sum(df.memory_usage(deep=True)) / 10 ** 6  # size in MB
 
@@ -110,7 +127,6 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     ]
 
     float_cols = ['a', 'b', 'd', 'e', 'f', 'g', 'o']
-
     int_cols = ['p2b', 'p11', 'p10']
 
     # Convert 'p2a' to date format
@@ -123,25 +139,21 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
 
     # Convert specified columns to float
     for col in float_cols:
-        # Replace commas with dots for float conversion
         df[col] = df[col].astype(str).str.replace(',', '.')
-        # Convert to float, setting errors to 'coerce' to handle any non-convertible values
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
     # Convert specified columns to integer
     for col in int_cols:
-        if col in df.columns:
-            # Convert to integers, setting errors to 'coerce' to handle any non-convertible values
-            df[col] = pd.to_numeric(df[col], errors='coerce').astype(pd.Int32Dtype())
+        df[col] = pd.to_numeric(df[col], errors='coerce').astype(pd.Int32Dtype())
 
     # Remove duplicates based on 'p1'
     df = df.drop_duplicates(subset=['p1']) # Keep the first occurrence
     
     # Print the size information
     if verbose:
-        print(f'orig_size={orig_size:.1f} MB')
         df = df.copy()
         new_size = sum(df.memory_usage(deep=True)) / 10 ** 6
+        print(f'orig_size={orig_size:.1f} MB')
         print(f'new_size={new_size:.1f} MB')
 
     return df
