@@ -265,10 +265,21 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
         plt.show()
 
 # Ukol 5: Zavinění nehody v čase
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
     df = df.copy()
     
-    # Select four regions
+    # Define the color palette
+    color_palette = {
+        'řidičem motorového vozidla': 'red',
+        'řidičem nemotorového vozidla': 'blue',
+        'chodcem': 'green',
+        'lesní zvěří, domácím zvířectvem': 'orange'
+    }
+    
+    # Select four regions and causes
     selected_regions = ['PHA', 'STC', 'JHC', 'PLK']
     causes = {
         1: 'řidičem motorového vozidla',
@@ -278,33 +289,41 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     }
     
     # Set up the matplotlib figure and axes
-    fig, axs = plt.subplots(len(selected_regions), 1, figsize=(10, 15), sharex=True)
+    fig, axs = plt.subplots(2, 2, figsize=(12, 10))  # Change to a 2x2 grid
+    axs = axs.flatten()  # Flatten the array for easy iteration
     
-    # Loop through each region and plot
     for i, region in enumerate(selected_regions):
+        
         df_region = df[(df['region'] == region) & (df['p10'].isin(causes.keys()))]
         df_region['Cause'] = df_region['p10'].map(causes)
         
         pivot = df_region.pivot_table(index='p2a', columns='Cause', values='p1', aggfunc='count', fill_value=0)
         monthly_data = pivot.resample('M').sum().stack().reset_index(name='Počet nehod')
         monthly_data['date'] = monthly_data['p2a'].dt.strftime('%Y-%m')
-
-        # Plotting the data
-        sns.lineplot(data=monthly_data, x='date', y='Počet nehod', hue='Cause', ax=axs[i])
+        
+        # Plotting the data with the new color palette
+        sns.lineplot(data=monthly_data, x='date', y='Počet nehod', hue='Cause', palette=color_palette, ax=axs[i])
 
         # Customizing the ticks and labels
         axs[i].set_xticks([f'{year}-01' for year in range(2016, 2024)])
-        axs[i].set_xticklabels([f'{year}' for year in range(2016, 2024)], rotation=45)
-        axs[i].set_title(f'Nehody v regionu {region}')
+        axs[i].set_xticklabels([f'{year}' for year in range(2016, 2024)])
+        axs[i].set_title(f'Kraj: {region}')
         axs[i].grid(True)
+        axs[i].set_xlabel('Datum')
+        # Remove the legend from each subplot
+        axs[i].get_legend().remove()
 
     # Set the common labels and title
     fig.suptitle('Zavinění nehody v čase podle regionu', fontsize=16)
     plt.xlabel('Datum')
     plt.ylabel('Počet nehod')
-
+    
     # Adjust the layout
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+    # Create a single legend for the whole figure
+    handles, labels = axs[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='lower center', ncol=len(causes), bbox_to_anchor=(0.5, 0.01))
 
     # Save the plot to a file
     if fig_location:
