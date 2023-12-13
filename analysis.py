@@ -242,13 +242,26 @@ def plot_state(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
 
 def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
                  show_figure: bool = False):
-    
+    """
+    Create a bar graph showing the number of accidents involving alcohol in different hours for selected regions.
+
+    The function processes the provided DataFrame to plot the number of accidents involving alcohol
+    or not, across different hours of the day for four selected regions. The accidents without a known time are excluded.
+
+    Parameters:
+    - df: DataFrame outputted from the parse_data function.
+    - fig_location: Path to save the figure.
+    - show_figure: Whether to display the figure or not.
+
+    The function uses column 'p2b' for the hour and 'p11' for alcohol involvement. 
+    It aggregates data using groupby and plots using seaborn's figure-level plotting.
+    """
     df = df.copy()
     
     # Assuming 'p2b' is in HHMM integer format
     df['Hour'] = (df['p2b'] // 100).astype(pd.Int32Dtype())
-    df = df[df['Hour'].between(0, 23)]  # Only keep valid hours
-
+    # Only keep valid hours
+    df = df[df['Hour'].between(0, 23)]
 
     # Determine if alcohol was involved
     df['Alkohol'] = df['p11'].apply(lambda x: 'Ano' if x in [1, 3, 5, 6, 7, 8, 9] else 'Ne')
@@ -289,13 +302,10 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
         plt.show()
 
 # Ukol 5: Zavinění nehody v čase
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
     df = df.copy()
     
-    # Define the color palette
     color_palette = {
         'řidičem motorového vozidla': 'red',
         'řidičem nemotorového vozidla': 'blue',
@@ -313,8 +323,8 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     }
     
     # Set up the matplotlib figure and axes
-    fig, axs = plt.subplots(2, 2, figsize=(12, 10))  # Change to a 2x2 grid
-    axs = axs.flatten()  # Flatten the array for easy iteration
+    fig, axs = plt.subplots(2, 2, figsize=(12, 10))
+    axs = axs.flatten()
     
     for i, region in enumerate(selected_regions):
         
