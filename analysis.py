@@ -11,6 +11,23 @@ import zipfile
 # Ukol 1: nacteni dat ze ZIP souboru
 
 def load_data(filename: str) -> pd.DataFrame:
+    """
+    Load data from a ZIP file located at the specified filename.
+
+    This function reads ZIP files for each year, where data are divided by regions. 
+    Data in each CSV file are then combined into a single DataFrame. A new column 'region' 
+    containing three-letter abbreviations of each region is added to the DataFrame.
+
+    Parameters:
+    - filename: Path to the ZIP file containing the data.
+
+    Returns:
+    - A pandas DataFrame containing the loaded data with an additional 'region' column.
+
+    Note: The function assumes data in cp1250 encoding and specific column names as defined 
+    in the project description.
+    """
+        
     # tyto konstanty nemente, pomuzou vam pri nacitani
     headers = ["p1", "p36", "p37", "p2a", "weekday(p2a)", "p2b", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13a",
                "p13b", "p13c", "p14", "p15", "p16", "p17", "p18", "p19", "p20", "p21", "p22", "p23", "p24", "p27",
@@ -36,43 +53,43 @@ def load_data(filename: str) -> pd.DataFrame:
         "KVK": "19",
     }
 
-    # Prázdný DataFrame pro načtení dat
+    # Empty DataFrame to load data
     all_data = pd.DataFrame()
 
-    # Načtení hlavního ZIP souboru
+    # Loading the main ZIP file
     with zipfile.ZipFile(filename, 'r') as z:
-        # Seznam všech ZIP souborů uvnitř hlavního ZIPu
+
+        # Save all ZIP files inside the main ZIP
         zip_files = z.namelist()
 
         for zip_file in zip_files:
             
-            # Načtení každého ZIP souboru
+            # Processing each ZIP file
             with z.open(zip_file) as inner_zip:
                 with zipfile.ZipFile(inner_zip) as iz:
-                    # Seznam všech CSV souborů uvnitř každého ZIPu
+
+                    # List of all CSV files inside each ZIP not counting walkers
                     csv_files = [f for f in iz.namelist() if f.endswith('.csv') and not f.startswith('CHODCI')]
 
                     for csv_file in csv_files:
 
-                        # Ignorování prázdných souborů
-                        if csv_file.startswith('08') or csv_file.startswith('09') or \
-                                csv_file.startswith('10') or csv_file.startswith('11') or \
-                                csv_file.startswith('12') or csv_file.startswith('13'):
+                        # Ignoring empty files
+                        if any(csv_file.startswith(prefix) for prefix in ['08', '09', '10', '11', '12', '13']):
                             continue
 
-                        # Získání kódu regionu z názvu souboru
+                        # Extracting region code from the file name
                         region_code = csv_file.split('.')[0][-2:]
                         region = next((key for key, value in regions.items() if value == region_code), None)
                         if region is None:
                             continue
 
-                        # Načtení dat z CSV souboru
+                        # Loading data from CSV file
                         with iz.open(csv_file) as f:
 
                             data = pd.read_csv(f, encoding='cp1250', names=headers, sep=';', dtype=str)
                             data['region'] = region
 
-                            # Sloučení s hlavním DataFrame
+                            # Merging with the main DataFrame
                             all_data = pd.concat([all_data, data], ignore_index=True)
 
         return all_data
