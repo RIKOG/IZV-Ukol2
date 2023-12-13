@@ -304,6 +304,21 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
 # Ukol 5: Zavinění nehody v čase
 
 def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
+    """
+    Create a line graph showing the number of accidents caused by different entities over time for selected regions.
+
+    The function processes the provided DataFrame to plot the number of accidents caused by drivers of motor
+    or non-motor vehicles, pedestrians, and animals for four selected regions over different months.
+    The data is aggregated monthly and displayed in a line chart.
+
+    Parameters:
+    - df: DataFrame outputted from the parse_data function.
+    - fig_location: Path to save the figure.
+    - show_figure: Whether to display the figure or not.
+
+    The function uses columns 'p2a' for the date and 'p10' for the cause of the accident.
+    The x-axis is limited from January 1, 2016, to January 1, 2023. The resulting plots are adjusted for clarity.
+    """
     df = df.copy()
     
     color_palette = {
