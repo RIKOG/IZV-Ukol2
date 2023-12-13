@@ -160,9 +160,22 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
 
 # Ukol 3: počty nehod podle stavu řidiče
 
-def plot_state(df, fig_location=None, show_figure=False):
-    
-    # Slovník pro mapování hodnot 'p57' na popisné texty
+def plot_state(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
+    """
+    Create a bar graph of the number of accidents in different regions based on the state of drivers.
+
+    The function processes the provided DataFrame to plot the number of accidents for each
+    driver's state across different regions. It consists of 6 subplots arranged in a grid of 3 rows and 2 columns.
+
+    Parameters:
+    - df: DataFrame outputted from the parse_data function.
+    - fig_location: Path to save the figure.
+    - show_figure: Whether to display the figure or not.
+
+    The function uses column 'p57' to differentiate states of drivers, identified by numbers 1 to 9.
+    It also sets proper titles, axis labels, and custom background for each subplot.
+    """
+    # Dictionary to map 'p57' values to descriptive texts
     driver_condition_mapping = {
         '1': 'Stav řidiče: dobrý',
         '2': 'Stav řidiče: unaven, usnul, náhlá fyzická indispozice',
@@ -180,16 +193,13 @@ def plot_state(df, fig_location=None, show_figure=False):
     # Exclude rows where 'p57' is NaN or '0' before mapping
     df = df[df['p57'].notna() & (df['p57'] != '0') & (df['p57'] != '1') & (df['p57'] != '2') & (df['p57'] != '3')]
 
-    # Aplikování mapování na sloupec 'p57'
+    # Apply mapping to 'p57' column
     df['p57_text'] = df['p57'].map(driver_condition_mapping)
 
-    # Agregace dat pro graf
+    # Aggregate data for plotting
     data_for_plotting = df.groupby(['region', 'p57_text'], observed=True).size().reset_index(name='pocet_nehod')
 
-    # Determine the number of unique regions for the palette
-    num_regions = df['region'].nunique()
-
-    # Vytvoření figure-level grafu s seaborn
+    # Create a figure-level plot with seaborn
     g = sns.catplot(
         data=data_for_plotting, kind='bar',
         x='region', y='pocet_nehod', hue='region',
@@ -198,38 +208,33 @@ def plot_state(df, fig_location=None, show_figure=False):
         legend=False,
     )
     
-    # Nastavení grafů a popisků, aby se nepřekrývaly
+    # Adjust plots and labels to avoid overlapping
     g.set_titles("{col_name}")
     g.set_axis_labels("", "Počet nehod")
-    # Removing the rotation of x-tick labels
     g.set_xticklabels(rotation=0)
-    # Set the common title
     g.fig.suptitle("Počet nehod dle stavu řidiče při nedobrém stavu", fontsize=16)
-    # Adjust the layout and make space for the common title
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-    # Nastavení pozadí pro každý podgraf
+    # Set the background color for each subplot
     for ax in g.axes.flatten():
         ax.set_facecolor('#DDEEFF')
         ax.yaxis.grid(True)
         ax.xaxis.grid(False)
-        # Upravení výšky y osy dle maximální hodnoty v každém podgrafu
         ax.set_ylim(0, data_for_plotting[data_for_plotting['p57_text'] == ax.get_title()]['pocet_nehod'].max())
-        # Nastavení popisků pro x osu (regiony)
         ax.set_xticklabels(data_for_plotting['region'].unique(), rotation=0)
 
     # Iterate over the axes to set the x-axis label for the bottom-most plots
-    for ax in g.axes[-2:]:  # Assumes that the last two axes are the bottom-most
+    for ax in g.axes[-2:]:  
         ax.set_xlabel('Kraj')
     # Hide x-axis labels for all other plots
     for ax in g.axes[:-2]:
         ax.set_xlabel('')
 
-    # Uložení grafu do souboru, pokud je zadán fig_location
+    # Save the plot if a file location is provided
     if fig_location:
-        g.fig.savefig(fig_location)
-    
-    # Zobrazení grafu, pokud je show_figure True
+        plt.savefig(fig_location)
+
+    # Show the plot if requested
     if show_figure:
         plt.show()
 
@@ -277,7 +282,7 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
 
     # Save the plot if a file location is provided
     if fig_location:
-        g.savefig(fig_location)
+        plt.savefig(fig_location)
 
     # Show the plot if requested
     if show_figure:
@@ -349,11 +354,11 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
 
     fig.legend(handles, labels, loc='lower center', ncol=len(causes), bbox_to_anchor=(0.5, 0.01), frameon=False)
 
-    # Save the plot to a file
+    # Save the plot if a file location is provided
     if fig_location:
         plt.savefig(fig_location)
 
-    # Show the plot
+    # Show the plot if requested
     if show_figure:
         plt.show()
 
