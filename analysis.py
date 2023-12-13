@@ -294,7 +294,11 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     
     for i, region in enumerate(selected_regions):
         
-        df_region = df[(df['region'] == region) & (df['p10'].isin(causes.keys()))]
+        mask = (df['region'] == region) & (df['p10'].isin(causes.keys()))
+        
+        df.loc[mask, 'Cause'] = df.loc[mask, 'p10'].map(causes)
+        df_region = df[mask].copy()
+
         df_region['Cause'] = df_region['p10'].map(causes)
         
         pivot = df_region.pivot_table(index='p2a', columns='Cause', values='p1', aggfunc='count', fill_value=0)
@@ -322,8 +326,9 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     # Create a single legend for the whole figure
-    handles, labels = axs[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc='lower center', ncol=len(causes), bbox_to_anchor=(0.5, 0.01))
+    handles, labels = axs[-1].get_legend_handles_labels()
+
+    fig.legend(handles, labels, loc='lower center', ncol=len(causes), bbox_to_anchor=(0.5, 0.01), frameon=False)
 
     # Save the plot to a file
     if fig_location:
@@ -342,15 +347,8 @@ if __name__ == "__main__":
 
     df2 = parse_data(df, True)
 
-    df.to_csv('data.csv', index=False, sep=';', encoding='utf-8')
+    #df.to_csv('data.csv', index=False, sep=';', encoding='utf-8')
 
-    #plot_state(df2, "01_state.png")
-    #plot_alcohol(df2, "02_alcohol.png")
+    plot_state(df2, "01_state.png")
+    plot_alcohol(df2, "02_alcohol.png")
     plot_fault(df2, "03_fault.png")
-
-# Poznamka:
-# pro to, abyste se vyhnuli castemu nacitani muzete vyuzit napr
-# VS Code a oznaceni jako bunky (radek #%%% )
-# Pak muzete data jednou nacist a dale ladit jednotlive funkce
-# Pripadne si muzete vysledny dataframe ulozit nekam na disk (pro ladici
-# ucely) a nacitat jej naparsovany z disku
