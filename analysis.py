@@ -1,5 +1,6 @@
 #!/usr/bin/env python3.11
 # coding=utf-8
+# Author: Richard Gajdosik, xgajdo33
 
 from matplotlib import pyplot as plt
 import pandas as pd
@@ -7,12 +8,7 @@ import seaborn as sns
 import numpy as np
 import zipfile
 
-
-# muzete pridat libovolnou zakladni knihovnu ci knihovnu predstavenou na prednaskach
-# dalsi knihovny pak na dotaz
-
 # Ukol 1: nacteni dat ze ZIP souboru
-
 
 def load_data(filename: str) -> pd.DataFrame:
     # tyto konstanty nemente, pomuzou vam pri nacitani
@@ -23,7 +19,6 @@ def load_data(filename: str) -> pd.DataFrame:
                "p57", "p58", "a", "b", "d", "e", "f", "g", "h", "i", "j", "k", "l", "n", "o", "p", "q", "r", "s", "t",
                "p5a"]
 
-    # def get_dataframe(filename: str, verbose: bool = False) -> pd.DataFrame:
     regions = {
         "PHA": "00",
         "STC": "01",
@@ -46,12 +41,11 @@ def load_data(filename: str) -> pd.DataFrame:
 
     # Načtení hlavního ZIP souboru
     with zipfile.ZipFile(filename, 'r') as z:
-        #print(f"Načítání hlavního ZIP souboru: {filename}")
         # Seznam všech ZIP souborů uvnitř hlavního ZIPu
         zip_files = z.namelist()
 
         for zip_file in zip_files:
-            #print(f"Zpracovávání ZIP souboru: {zip_file}")
+            
             # Načtení každého ZIP souboru
             with z.open(zip_file) as inner_zip:
                 with zipfile.ZipFile(inner_zip) as iz:
@@ -59,22 +53,18 @@ def load_data(filename: str) -> pd.DataFrame:
                     csv_files = [f for f in iz.namelist() if f.endswith('.csv') and not f.startswith('CHODCI')]
 
                     for csv_file in csv_files:
-                        #print(f"Zpracovávání souboru: {csv_file}")
 
                         # Ignorování prázdných souborů
                         if csv_file.startswith('08') or csv_file.startswith('09') or \
                                 csv_file.startswith('10') or csv_file.startswith('11') or \
                                 csv_file.startswith('12') or csv_file.startswith('13'):
-                            #print(f"Soubor {csv_file} je prázdný a bude vynechán.")
                             continue
 
                         # Získání kódu regionu z názvu souboru
                         region_code = csv_file.split('.')[0][-2:]
                         region = next((key for key, value in regions.items() if value == region_code), None)
                         if region is None:
-                            #print(f"Region code {region_code} not found in regions map.")
                             continue
-                        #print(f"Soubor {csv_file} patří do regionu: {region}")
 
                         # Načtení dat z CSV souboru
                         with iz.open(csv_file) as f:
@@ -93,7 +83,7 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     if verbose:
         orig_size = sum(df.memory_usage(deep=True)) / 10 ** 6  # size in MB
 
-
+    # Keeping everything categorical because of it not being needed in later tasks
     categorical_columns = [
         'p5a', 'p6', 'p7', 'p8', 'p9', 'p12', 'p13a', 'p13b', 'p13c', 'p14',
         'p15', 'p16', 'p17', 'p18', 'p19', 'p20', 'p21', 'p22', 'p23', 'p24', 'p27', 
@@ -139,7 +129,8 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
 
     return df
 
-# Ukol 3: počty nehod oidke stavu řidiče
+# Ukol 3: počty nehod podle stavu řidiče
+
 def plot_state(df, fig_location=None, show_figure=False):
     
     # Slovník pro mapování hodnot 'p57' na popisné texty
@@ -190,6 +181,7 @@ def plot_state(df, fig_location=None, show_figure=False):
 
     # Nastavení pozadí pro každý podgraf
     for ax in g.axes.flatten():
+        ax.set_facecolor('#DDEEFF')
         ax.yaxis.grid(True)
         ax.xaxis.grid(False)
         # Upravení výšky y osy dle maximální hodnoty v každém podgrafu
@@ -204,7 +196,6 @@ def plot_state(df, fig_location=None, show_figure=False):
     for ax in g.axes[:-2]:
         ax.set_xlabel('')
 
-
     # Uložení grafu do souboru, pokud je zadán fig_location
     if fig_location:
         g.fig.savefig(fig_location)
@@ -214,7 +205,6 @@ def plot_state(df, fig_location=None, show_figure=False):
         plt.show()
 
 # Ukol4: alkohol v jednotlivých hodinách
-
 
 def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
                  show_figure: bool = False):
