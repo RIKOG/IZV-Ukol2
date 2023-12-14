@@ -10,12 +10,13 @@ import zipfile
 
 # Ukol 1: nacteni dat ze ZIP souboru
 
+
 def load_data(filename: str) -> pd.DataFrame:
     """
     Load data from a ZIP file located at the specified filename.
 
-    This function reads ZIP files for each year, where data are divided by regions. 
-    Data in each CSV file are then combined into a single DataFrame. A new column 'region' 
+    This function reads ZIP files for each year, where data are divided by regions.
+    Data in each CSV file are then combined into a single DataFrame. A new column 'region'
     containing three-letter abbreviations of each region is added to the DataFrame.
 
     Parameters:
@@ -24,10 +25,10 @@ def load_data(filename: str) -> pd.DataFrame:
     Returns:
     - A pandas DataFrame containing the loaded data with an additional 'region' column.
 
-    Note: The function assumes data in cp1250 encoding and specific column names as defined 
+    Note: The function assumes data in cp1250 encoding and specific column names as defined
     in the project description.
     """
-        
+
     # tyto konstanty nemente, pomuzou vam pri nacitani
     headers = ["p1", "p36", "p37", "p2a", "weekday(p2a)", "p2b", "p6", "p7", "p8", "p9", "p10", "p11", "p12", "p13a",
                "p13b", "p13c", "p14", "p15", "p16", "p17", "p18", "p19", "p20", "p21", "p22", "p23", "p24", "p27",
@@ -63,7 +64,7 @@ def load_data(filename: str) -> pd.DataFrame:
         zip_files = z.namelist()
 
         for zip_file in zip_files:
-            
+
             # Processing each ZIP file
             with z.open(zip_file) as inner_zip:
                 with zipfile.ZipFile(inner_zip) as iz:
@@ -93,15 +94,16 @@ def load_data(filename: str) -> pd.DataFrame:
                             all_data = pd.concat([all_data, data], ignore_index=True)
 
         return all_data
-    
+
 # Ukol 2: zpracovani dat
+
 
 def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     """
     Parse and clean the data from the DataFrame obtained by calling load_data().
 
     This function converts the 'p2a' column to a datetime format, categorizes suitable columns,
-    converts specified columns to float or integer types, 
+    converts specified columns to float or integer types,
     and duplicate records based on the 'p1' identifier are removed.
 
     Parameters:
@@ -112,7 +114,7 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     - A cleaned and parsed DataFrame.
 
     The function targets to reduce the memory usage below 0.7 GB.
-    
+
     """
     if verbose:
         orig_size = sum(df.memory_usage(deep=True)) / 10 ** 6  # size in MB
@@ -120,9 +122,9 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     # Keeping everything categorical because of it not being needed in later tasks
     categorical_columns = [
         'p5a', 'p6', 'p7', 'p8', 'p9', 'p12', 'p13a', 'p13b', 'p13c', 'p14',
-        'p15', 'p16', 'p17', 'p18', 'p19', 'p20', 'p21', 'p22', 'p23', 'p24', 'p27', 
-        'p28', 'p33c', 'p33f', 'p33g', 'p34', 'p35', 
-        'p36', 'p37', 'p39', 'p44', 'p45a', 'p47', 'p48a', 'p49', 'p50a', 'p50b', 'p51', 'p52', 
+        'p15', 'p16', 'p17', 'p18', 'p19', 'p20', 'p21', 'p22', 'p23', 'p24', 'p27',
+        'p28', 'p33c', 'p33f', 'p33g', 'p34', 'p35',
+        'p36', 'p37', 'p39', 'p44', 'p45a', 'p47', 'p48a', 'p49', 'p50a', 'p50b', 'p51', 'p52',
         'p53', 'p55a', 'p57', 'p58', 'weekday(p2a)', 'h', 'i', 'k', 'region'
     ]
 
@@ -131,7 +133,7 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
 
     # Convert 'p2a' to date format
     df['p2a'] = pd.to_datetime(df['p2a'])
-    
+
     # Convert columns to categorical data type
     for col in categorical_columns:
         if col in df.columns:
@@ -147,8 +149,8 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
         df[col] = pd.to_numeric(df[col], errors='coerce').astype(pd.Int32Dtype())
 
     # Remove duplicates based on 'p1'
-    df = df.drop_duplicates(subset=['p1']) # Keep the first occurrence
-    
+    df = df.drop_duplicates(subset=['p1'])
+
     # Print the size information
     if verbose:
         df = df.copy()
@@ -159,6 +161,7 @@ def parse_data(df: pd.DataFrame, verbose: bool = False) -> pd.DataFrame:
     return df
 
 # Ukol 3: počty nehod podle stavu řidiče
+
 
 def plot_state(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
     """
@@ -189,7 +192,7 @@ def plot_state(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     }
 
     df = df.copy()
-    
+
     # Exclude rows where 'p57' is NaN or '0' before mapping
     df = df[df['p57'].notna() & (df['p57'] != '0') & (df['p57'] != '1') & (df['p57'] != '2') & (df['p57'] != '3')]
 
@@ -207,7 +210,7 @@ def plot_state(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
         sharey=False, palette=sns.color_palette("hls", 14),
         legend=False,
     )
-    
+
     # Adjust plots and labels to avoid overlapping
     g.set_titles("{col_name}")
     g.set_axis_labels("", "Počet nehod")
@@ -224,8 +227,9 @@ def plot_state(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
         ax.set_xticklabels(data_for_plotting['region'].unique(), rotation=0)
 
     # Iterate over the axes to set the x-axis label for the bottom-most plots
-    for ax in g.axes[-2:]:  
+    for ax in g.axes[-2:]:
         ax.set_xlabel('Kraj')
+
     # Hide x-axis labels for all other plots
     for ax in g.axes[:-2]:
         ax.set_xlabel('')
@@ -239,6 +243,7 @@ def plot_state(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
         plt.show()
 
 # Ukol4: alkohol v jednotlivých hodinách
+
 
 def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
                  show_figure: bool = False):
@@ -257,7 +262,7 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
     It aggregates data using groupby and plots using seaborn's figure-level plotting.
     """
     df = df.copy()
-    
+
     # Assuming 'p2b' is in HHMM integer format
     df['Hour'] = (df['p2b'] // 100).astype(pd.Int32Dtype())
     # Only keep valid hours
@@ -288,9 +293,9 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
     # Update the titles and labels
     g.set_titles("Kraj: {col_name}")
     g.set_axis_labels("Hodina", "Počet nehod")
-    
+
     # Adjust the layout
-    g.fig.subplots_adjust(top=0.95) 
+    g.fig.subplots_adjust(top=0.95)
     g.fig.suptitle('Alkohol v jednotlivých hodinách', fontsize=16)
 
     # Save the plot if a file location is provided
@@ -302,6 +307,7 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
         plt.show()
 
 # Ukol 5: Zavinění nehody v čase
+
 
 def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = False):
     """
@@ -320,14 +326,14 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     The x-axis is limited from January 1, 2016, to January 1, 2023. The resulting plots are adjusted for clarity.
     """
     df = df.copy()
-    
+
     color_palette = {
         'řidičem motorového vozidla': 'red',
         'řidičem nemotorového vozidla': 'blue',
         'chodcem': 'green',
         'lesní zvěří, domácím zvířectvem': 'orange'
     }
-    
+
     # Select four regions and causes
     selected_regions = ['PHA', 'STC', 'JHC', 'PLK']
     causes = {
@@ -336,26 +342,27 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
         3: 'chodcem',
         4: 'lesní zvěří, domácím zvířectvem'
     }
-    
+
     # Set up the matplotlib figure and axes
     fig, axs = plt.subplots(2, 2, figsize=(12, 10))
     axs = axs.flatten()
-    
+
     for i, region in enumerate(selected_regions):
-        
+
         mask = (df['region'] == region) & (df['p10'].isin(causes.keys()))
-        
+
         df.loc[mask, 'Cause'] = df.loc[mask, 'p10'].map(causes)
         df_region = df[mask].copy()
 
         df_region['Cause'] = df_region['p10'].map(causes)
-        
+
         pivot = df_region.pivot_table(index='p2a', columns='Cause', values='p1', aggfunc='count', fill_value=0)
         monthly_data = pivot.resample('M').sum().stack().reset_index(name='Počet nehod')
         monthly_data['date'] = monthly_data['p2a'].dt.strftime('%Y-%m')
-        
+
         # Plotting the data with the new color palette
-        sns.lineplot(data=monthly_data, x='date', y='Počet nehod', hue='Cause', palette=color_palette, ax=axs[i])
+        sns.lineplot(data=monthly_data, x='date', y='Počet nehod',
+                     hue='Cause', palette=color_palette, ax=axs[i])
 
         # Customizing the ticks and labels
         axs[i].set_xticks([f'{year}-01' for year in range(2016, 2024)])
@@ -370,14 +377,15 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     fig.suptitle('Zavinění nehody v čase podle regionu', fontsize=16)
     plt.xlabel('Datum')
     plt.ylabel('Počet nehod')
-    
+
     # Adjust the layout
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
     # Create a single legend for the whole figure
     handles, labels = axs[-1].get_legend_handles_labels()
 
-    fig.legend(handles, labels, loc='lower center', ncol=len(causes), bbox_to_anchor=(0.5, 0.01), frameon=False)
+    fig.legend(handles, labels, loc='lower center',
+               ncol=len(causes), bbox_to_anchor=(0.5, 0.01), frameon=False)
 
     # Save the plot if a file location is provided
     if fig_location:
@@ -387,17 +395,14 @@ def plot_fault(df: pd.DataFrame, fig_location: str = None, show_figure: bool = F
     if show_figure:
         plt.show()
 
+
 if __name__ == "__main__":
 
     df = load_data("data.zip")
-
-    #df.to_pickle("dataframe.pkl")
-    #df = pd.read_pickle("dataframe.pkl")
-
+    # df.to_pickle("dataframe.pkl")
+    # df = pd.read_pickle("dataframe.pkl")
     df2 = parse_data(df, True)
-
-    #df.to_csv('data.csv', index=False, sep=';', encoding='utf-8')
-
+    # df.to_csv('data.csv', index=False, sep=';', encoding='utf-8')
     plot_state(df2, "01_state.png")
     plot_alcohol(df2, "02_alcohol.png")
     plot_fault(df2, "03_fault.png")
