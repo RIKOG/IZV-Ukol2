@@ -263,6 +263,11 @@ def plot_alcohol(df: pd.DataFrame, fig_location: str = None,
     """
     df = df.copy()
 
+    # Filter for the selected regions
+    selected_regions = ['OLK', 'JHM', 'MSK', 'ZLK']
+    df = df[df['region'].isin(selected_regions)]
+    df['region'] = df['region'].cat.remove_unused_categories()
+    
     # Assuming 'p2b' is in HHMM integer format
     df['Hour'] = (df['p2b'] // 100).astype(pd.Int32Dtype())
     # Only keep valid hours
